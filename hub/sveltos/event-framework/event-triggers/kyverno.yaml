@@ -12,7 +12,7 @@ spec:
     matchLabels:
       type: mgmt
   eventSourceName: detect-cluster-requiring-kyverno
-  profileNameFormat: "{{ .Cluster.metadata.name }}-{{ .Resource.metadata.name }}"
+  profileNameFormat: "{{ .Cluster.metadata.name }}-{{ .Resource.metadata.name }}-kyverno"
   oneForEvent: true
   policyRefs:
   - name: kyverno-helmreleases
