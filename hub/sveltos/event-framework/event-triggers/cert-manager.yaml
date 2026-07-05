@@ -12,6 +12,7 @@ spec:
     matchLabels:
       type: mgmt
   eventSourceName: detect-cluster-requiring-cert-manager
+  instantiatedProfileNameFormat: {{ .Cluster.metadata.name }}-{{ .Resource.metadata.name }}
   oneForEvent: true
   policyRefs:
   - name: cert-manager-helmreleases
