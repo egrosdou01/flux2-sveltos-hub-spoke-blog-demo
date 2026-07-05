@@ -28,15 +28,6 @@ metadata:
     projectsveltos.io/instantiate: ok
 data:
   helmreleases.yaml: |
-    apiVersion: source.toolkit.fluxcd.io/v1
-    kind: HelmRepository
-    metadata:
-      name: kyverno
-      namespace: flux-system
-    spec:
-      interval: 1h
-      url: https://kyverno.github.io/kyverno/
-    ---
     apiVersion: helm.toolkit.fluxcd.io/v2
     kind: HelmRelease
     metadata:

@@ -1,0 +1,30 @@
+---
+apiVersion: config.projectsveltos.io/v1beta1
+kind: ClusterProfile
+metadata:
+  name: cert-manager-helmrepository
+spec:
+  clusterSelector:
+    matchLabels:
+      type: mgmt
+  syncMode: Continuous
+  policyRefs:
+  - name: cert-manager-helmrepository
+    namespace: default
+    kind: ConfigMap
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cert-manager-helmrepository
+  namespace: default
+data:
+  helmrepository.yaml: |
+    apiVersion: source.toolkit.fluxcd.io/v1
+    kind: HelmRepository
+    metadata:
+      name: jetstack
+      namespace: flux-system
+    spec:
+      interval: 1h
+      url: https://charts.jetstack.io
