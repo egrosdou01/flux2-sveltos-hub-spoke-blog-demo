@@ -55,7 +55,7 @@ data:
           version: "{{ if eq (index .Resource.metadata.labels "environment") "production" }}3.6.3{{ else }}3.7.1{{ end }}"
           sourceRef:
             kind: HelmRepository
-            name: kyverno-{{ .Resource.metadata.name }}
+            name: kyverno
             namespace: flux-system
           interval: 12h
       install:
