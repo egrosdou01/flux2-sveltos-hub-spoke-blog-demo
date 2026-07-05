@@ -30,7 +30,7 @@ data:
     apiVersion: source.toolkit.fluxcd.io/v1
     kind: HelmRepository
     metadata:
-      name: kyverno-{{ .Resource.metadata.name }}
+      name: kyverno
       namespace: flux-system
     spec:
       interval: 1h
