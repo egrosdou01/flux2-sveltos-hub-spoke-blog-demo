@@ -1,0 +1,45 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: projectsveltos
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: projectsveltos
+  namespace: flux-system
+spec:
+  interval: 24h
+  url: https://projectsveltos.github.io/helm-charts
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: projectsveltos
+  namespace: flux-system
+spec:
+  interval: 30m
+  targetNamespace: projectsveltos
+  storageNamespace: projectsveltos
+  chart:
+    spec:
+      chart: projectsveltos
+      version: ">=1.6.1"
+      sourceRef:
+        kind: HelmRepository
+        name: projectsveltos
+        namespace: flux-system
+      interval: 12h
+  install:
+    crds: Create
+    createNamespace: true
+    timeout: 10m
+    strategy:
+      name: RetryOnFailure
+  upgrade:
+    crds: CreateReplace
+    timeout: 10m
+    cleanupOnFail: true
+    strategy:
+      name: RetryOnFailure

@@ -1,0 +1,116 @@
+---
+apiVersion: lib.projectsveltos.io/v1beta1
+kind: EventTrigger
+metadata:
+  name: bootstrap-spoke-cluster
+  namespace: default
+spec:
+  sourceClusterSelector:
+    matchLabels:
+      type: mgmt
+  destinationClusterSelector:
+    matchLabels:
+      type: mgmt
+  eventSourceName: detect-spoke-cluster
+  oneForEvent: true
+  policyRefs:
+  - name: cluster-bootstrap
+    namespace: default
+    kind: ConfigMap
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-bootstrap
+  namespace: default
+  annotations:
+    projectsveltos.io/instantiate: ok
+data:
+  bootstrap.yaml: |
+    ---
+    apiVersion: kustomize.toolkit.fluxcd.io/v1
+    kind: Kustomization
+    metadata:
+      name: tenants
+      namespace: {{ .Resource.metadata.name }}
+    spec:
+      interval: 1h
+      retryInterval: 3m
+      timeout: 5m
+      prune: true
+      wait: true
+      path: ./clusters/{{ .Resource.metadata.name }}/tenants
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+      kubeConfig:
+        secretRef:
+          name: cluster-kubeconfig
+      postBuild:
+        substitute:
+          CLUSTER_NAME: {{ .Resource.metadata.name }}
+    ---
+    apiVersion: kustomize.toolkit.fluxcd.io/v1
+    kind: Kustomization
+    metadata:
+      name: infra-controllers
+      namespace: {{ .Resource.metadata.name }}
+    spec:
+      dependsOn:
+        - name: tenants
+      targetNamespace: {{ .Resource.metadata.name }}
+      interval: 1h
+      retryInterval: 3m
+      timeout: 5m
+      prune: true
+      wait: true
+      path: ./clusters/{{ .Resource.metadata.name }}/infra-controllers
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+      patches:
+        - target:
+            kind: HelmRelease
+          patch: |
+            - op: add
+              path: /spec/kubeConfig
+              value:
+                secretRef:
+                  name: cluster-kubeconfig
+            - op: add
+              path: /spec/serviceAccountName
+              value: flux-cluster-admin
+    ---
+    apiVersion: kustomize.toolkit.fluxcd.io/v1
+    kind: Kustomization
+    metadata:
+      name: apps
+      namespace: {{ .Resource.metadata.name }}
+    spec:
+      dependsOn:
+        - name: infra-controllers
+      targetNamespace: {{ .Resource.metadata.name }}
+      interval: 1h
+      retryInterval: 3m
+      timeout: 5m
+      prune: true
+      wait: true
+      path: ./clusters/{{ .Resource.metadata.name }}/apps
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+      patches:
+        - target:
+            kind: HelmRelease
+          patch: |
+            - op: add
+              path: /spec/kubeConfig
+              value:
+                secretRef:
+                  name: cluster-kubeconfig
+            - op: add
+              path: /spec/serviceAccountName
+              value: flux-restricted

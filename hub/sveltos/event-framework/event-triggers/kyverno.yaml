@@ -1,0 +1,79 @@
+---
+apiVersion: lib.projectsveltos.io/v1beta1
+kind: EventTrigger
+metadata:
+  name: deploy-kyverno
+  namespace: default
+spec:
+  sourceClusterSelector:
+    matchLabels:
+      type: mgmt
+  destinationClusterSelector:
+    matchLabels:
+      type: mgmt
+  eventSourceName: detect-cluster-requiring-kyverno
+  oneForEvent: true
+  policyRefs:
+  - name: kyverno-helmreleases
+    namespace: default
+    kind: ConfigMap
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kyverno-helmreleases
+  namespace: default
+  annotations:
+    projectsveltos.io/instantiate: ok
+data:
+  helmreleases.yaml: |
+    apiVersion: source.toolkit.fluxcd.io/v1
+    kind: HelmRepository
+    metadata:
+      name: kyverno
+      namespace: flux-system
+    spec:
+      interval: 1h
+      url: https://kyverno.github.io/kyverno/
+    ---
+    apiVersion: helm.toolkit.fluxcd.io/v2
+    kind: HelmRelease
+    metadata:
+      name: kyverno-{{ .Resource.metadata.name }}
+      namespace: {{ .Resource.metadata.namespace }}
+    spec:
+      interval: 15m
+      targetNamespace: kyverno
+      storageNamespace: kyverno
+      kubeConfig:
+        secretRef:
+          name: {{ .Resource.metadata.name }}-sveltos-kubeconfig
+          key: kubeconfig
+      chart:
+        spec:
+          chart: kyverno
+          version: "{{ if eq (index .Resource.metadata.labels "environment") "production" }}3.6.3{{ else }}3.7.1{{ end }}"
+          sourceRef:
+            kind: HelmRepository
+            name: kyverno
+            namespace: flux-system
+          interval: 12h
+      install:
+        createNamespace: true
+        crds: CreateReplace
+        replace: true
+        timeout: 10m
+        strategy:
+          name: RetryOnFailure
+      upgrade:
+        crds: CreateReplace
+        timeout: 10m
+        cleanupOnFail: true
+        force: true
+        strategy:
+          name: RetryOnFailure
+      uninstall:
+        disableHooks: true
+        keepHistory: false
+        timeout: 5m
+        deletionPropagation: background

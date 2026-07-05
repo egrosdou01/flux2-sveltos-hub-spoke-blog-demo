@@ -1,0 +1,21 @@
+# Registers the production spoke cluster with Sveltos.
+# Labels drive EventSource detection:
+#   type: spoke             -> EventTrigger bootstraps tenants/infra-controllers/apps Kustomizations
+#   cert-manager: required  -> EventTrigger deploys cert-manager HelmRelease
+#   kyverno: required       -> EventTrigger deploys kyverno HelmRelease
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: production
+---
+apiVersion: lib.projectsveltos.io/v1beta1
+kind: SveltosCluster
+metadata:
+  name: production
+  namespace: production
+  labels:
+    type: spoke
+    environment: production
+    cert-manager: required
+    kyverno: required

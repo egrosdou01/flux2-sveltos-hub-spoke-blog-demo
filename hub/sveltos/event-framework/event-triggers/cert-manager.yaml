@@ -1,0 +1,73 @@
+---
+apiVersion: lib.projectsveltos.io/v1beta1
+kind: EventTrigger
+metadata:
+  name: deploy-cert-manager
+  namespace: default
+spec:
+  sourceClusterSelector:
+    matchLabels:
+      type: mgmt
+  destinationClusterSelector:
+    matchLabels:
+      type: mgmt
+  eventSourceName: detect-cluster-requiring-cert-manager
+  oneForEvent: true
+  policyRefs:
+  - name: cert-manager-helmreleases
+    namespace: default
+    kind: ConfigMap
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cert-manager-helmreleases
+  namespace: default
+  annotations:
+    projectsveltos.io/instantiate: ok
+data:
+  helmreleases.yaml: |
+    apiVersion: source.toolkit.fluxcd.io/v1
+    kind: HelmRepository
+    metadata:
+      name: jetstack
+      namespace: flux-system
+    spec:
+      interval: 1h
+      url: https://charts.jetstack.io
+    ---
+    apiVersion: helm.toolkit.fluxcd.io/v2
+    kind: HelmRelease
+    metadata:
+      name: cert-manager-{{ .Resource.metadata.name }}
+      namespace: {{ .Resource.metadata.namespace }}
+    spec:
+      interval: 15m
+      targetNamespace: cert-manager
+      kubeConfig:
+        secretRef:
+          name: {{ .Resource.metadata.name }}-sveltos-kubeconfig
+          key: kubeconfig
+      chart:
+        spec:
+          chart: cert-manager
+          version: "{{ if eq (index .Resource.metadata.labels "environment") "production" }}v1.18.6{{ else }}v1.19.4{{ end }}"
+          sourceRef:
+            kind: HelmRepository
+            name: jetstack
+            namespace: flux-system
+          interval: 15m
+      install:
+        createNamespace: true
+        timeout: 10m
+        strategy:
+          name: RetryOnFailure
+      upgrade:
+        timeout: 10m
+        cleanupOnFail: true
+        strategy:
+          name: RetryOnFailure
+      values:
+        crds:
+          enabled: true
+          keep: true

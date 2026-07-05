@@ -1,0 +1,5 @@
+# Exclude sensitive data
+bin/
+
+# Exclude sensitive data
+kubeconfig/

@@ -1,0 +1,21 @@
+# Registers the staging spoke cluster with Sveltos.
+# Labels drive EventSource detection:
+#   type: spoke             -> EventTrigger bootstraps tenants/infra-controllers/apps Kustomizations
+#   cert-manager: required  -> EventTrigger deploys cert-manager HelmRelease
+#   kyverno: required       -> EventTrigger deploys kyverno HelmRelease
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: staging
+---
+apiVersion: lib.projectsveltos.io/v1beta1
+kind: SveltosCluster
+metadata:
+  name: staging
+  namespace: staging
+  labels:
+    type: spoke
+    environment: staging
+    cert-manager: required
+    kyverno: required
