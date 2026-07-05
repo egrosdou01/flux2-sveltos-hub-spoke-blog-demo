@@ -30,7 +30,7 @@ data:
     apiVersion: source.toolkit.fluxcd.io/v1
     kind: HelmRepository
     metadata:
-      name: kyverno
+      name: kyverno-{{ .Resource.metadata.name }}
       namespace: flux-system
     spec:
       interval: 1h
@@ -55,7 +55,7 @@ data:
           version: "{{ if eq (index .Resource.metadata.labels "environment") "production" }}3.6.3{{ else }}3.7.1{{ end }}"
           sourceRef:
             kind: HelmRepository
-            name: kyverno
+            name: kyverno-{{ .Resource.metadata.name }}
             namespace: flux-system
           interval: 12h
       install:
